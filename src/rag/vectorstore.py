@@ -20,7 +20,7 @@ class VectorStoreManager:
         fs = LocalFileStore(parent_docs_dir)
         self.docstore = create_kv_docstore(fs)
 
-    def initialize_store(self, is_first_time_indexing: bool = False):
+    def initialize_store(self, is_first_time_indexing: bool = False, batch_size=100):
         os.makedirs(self.persist_directory, exist_ok=True)
 
         self.vectorstore = Chroma(
@@ -40,9 +40,11 @@ class VectorStoreManager:
         )
 
         if is_first_time_indexing and self.raw_docs:
-            self.parent_retriever.add_documents(self.raw_docs)
+            print(f"Đang indexing {len(self.raw_docs)} tài liệu theo từng batch...")
 
-        return self.vectorstore
+            for i in range(0, len(self.raw_docs), batch_size):
+                doc_batch = self.raw_docs[i: i + batch_size]
+                self.parent_retriever.add_documents(doc_batch)
 
     def get_retriever(self, top_k=10):
         if not self.vectorstore:
@@ -60,7 +62,6 @@ from langchain_classic.retrievers import EnsembleRetriever
 def build_hybrid_retriever(raw_docs, parent_retriever: ParentDocumentRetriever, top_k: int = 10):
     parent_splitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=50)
     parent_docs = parent_splitter.split_documents(raw_docs) if raw_docs else []
-
     bm25_retriever = BM25Retriever.from_documents(parent_docs)
     bm25_retriever.k = top_k
 

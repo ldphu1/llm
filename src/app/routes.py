@@ -17,14 +17,19 @@ llm_model = OllamaLLM(model="llama3")
 
 loader = Loader(dataset_name="taidng/UIT-ViQuAD2.0")
 document = loader.load_documents()
+document = document[:500]
 
+print("splitting...")
 text_splitter = Splitter()
 chunks = text_splitter.split_document(document, embedding_model=embedding_model)
 
+print("building store...")
 vectorstore = VectorStoreManager(raw_docs=document, embedding_model=embedding_model)
 vectorstore.initialize_store(is_first_time_indexing=True)
+print("get retriever...")
 retriever = vectorstore.get_retriever(top_k=10)
 
+print("building chain...")
 chain = Chain(llm_model, retriever)
 
 rag_chain = chain.build_chain()

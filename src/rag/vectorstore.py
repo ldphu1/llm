@@ -35,10 +35,35 @@ class VectorStore:
 
         return doc_id
 
-    def get_retriever(self, top_k=3, search_type="similarity"):
+    def get_retriever(self,documents ,top_k=10, search_type="similarity"):
         if not self.vectorstore:
             self.initialize_store()
 
-        return self.vectorstore.as_retriever(top_k=top_k, search_type=search_type)
+        hybrid_retriever = build_hybrid_retriever(documents ,self.vectorstore, top_k)
+
+        return hybrid_retriever
+
+
+from langchain_community.retrievers import BM25Retriever
+from langchain_classic.retrievers import EnsembleRetriever
+from langchain_core.documents import Document
+
+
+def build_hybrid_retriever(docs: list[Document], chroma_vectorstore, top_k: int = 10):
+    bm25_retriever = BM25Retriever.from_documents(docs)
+    bm25_retriever.k = top_k
+
+    dense_retriever = chroma_vectorstore.as_retriever(
+        search_type="similarity",
+        search_kwargs={"k": top_k}
+    )
+
+
+    ensemble_retriever = EnsembleRetriever(
+        retrievers=[bm25_retriever, dense_retriever],
+        weights=[0.4, 0.6]
+    )
+
+    return ensemble_retriever
 
 

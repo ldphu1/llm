@@ -12,7 +12,7 @@ class Loader:
     def load_documents(self):
         documents = [
             Document(
-                page_content=row["article_content"],
+                page_content=row["context"],
                 metadata={
                     "title": row.get("title", ""),
                     "id": i
@@ -24,7 +24,7 @@ class Loader:
         return documents
 
 if __name__ == "__main__":
-    loader = Loader(dataset_name="thangvip/vietnamese-legal-qa")
+    loader = Loader(dataset_name="taidng/UIT-ViQuAD2.0")
 
     doc = loader.load_documents()
     print(len(doc))

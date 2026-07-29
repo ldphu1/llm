@@ -3,7 +3,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_experimental.text_splitter import SemanticChunker
 
 class Splitter:
-    def __init__(self, chunk_size=500, chunk_overlap=100, strategy=None):
+    def __init__(self, chunk_size=200, chunk_overlap=50, strategy=None):
         self.chunk_size = chunk_size
         self.chunk_overlap = chunk_overlap
         self.strategy = strategy

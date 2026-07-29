@@ -15,14 +15,14 @@ embedding_model = HuggingFaceEmbeddings(
 )
 llm_model = OllamaLLM(model="llama3")
 
-loader = Loader(dataset_name="thangvip/vietnamese-legal-qa")
+loader = Loader(dataset_name="taidng/UIT-ViQuAD2.0")
 document = loader.load_documents()
 
-text_splitter = Splitter(strategy="sematic")
+text_splitter = Splitter()
 chunks = text_splitter.split_document(document, embedding_model=embedding_model)
 
 vectorstore = VectorStore(chunks, embedding_model)
-retriever = vectorstore.get_retriever()
+retriever = vectorstore.get_retriever(chunks)
 
 chain = Chain(llm_model, retriever)
 

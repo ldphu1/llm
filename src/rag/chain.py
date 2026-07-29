@@ -5,6 +5,9 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough, RunnableParallel, Runnable
 from langchain_core.language_models import BaseChatModel
 from langchain_core.retrievers import BaseRetriever
+from langchain_classic.retrievers import ContextualCompressionRetriever
+from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
+from langchain_community.cross_encoders import HuggingFaceCrossEncoder
 
 def format_docs(docs: List[Document]):
     formatted_chunks = []
@@ -28,21 +31,29 @@ Quy tắc bắt buộc:
 {question}
 """
 
-    def __init__(self, llm_model: BaseChatModel, retriever: BaseRetriever):
+    def __init__(self, llm_model: BaseChatModel, retriever: BaseRetriever, rerunk_model="BAAI/bge-reranker-base"):
         self.llm_model = llm_model
         self.retriever = retriever
+
+        cross_encoder = HuggingFaceCrossEncoder(
+            model_name=rerunk_model
+        )
+        compressor = CrossEncoderReranker(model=cross_encoder, top_n=3)
+        self.compression_retriever = ContextualCompressionRetriever(
+            base_compressor=compressor,
+            base_retriever=self.retriever
+        )
+
         self.prompt = ChatPromptTemplate.from_template(self.TEMPLATE)
 
 
     def build_chain(self) -> RunnablePassthrough:
         rag_chain = (
-            {"context": self.retriever | format_docs, "question": RunnablePassthrough()}
+            {"context": self.compression_retriever | format_docs, "question": RunnablePassthrough()}
             | self.prompt
             | self.llm_model
             | StrOutputParser()
         )
 
         return rag_chain
-
-
 

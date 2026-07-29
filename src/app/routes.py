@@ -1,7 +1,7 @@
 from langchain_ollama import OllamaLLM
 from rag.loader import Loader
 from rag.splitter import Splitter
-from rag.vectorstore import VectorStore
+from rag.vectorstore import VectorStoreManager
 from rag.chain import Chain
 
 import torch
@@ -21,8 +21,9 @@ document = loader.load_documents()
 text_splitter = Splitter()
 chunks = text_splitter.split_document(document, embedding_model=embedding_model)
 
-vectorstore = VectorStore(chunks, embedding_model)
-retriever = vectorstore.get_retriever(chunks)
+vectorstore = VectorStoreManager(raw_docs=document, embedding_model=embedding_model)
+vectorstore.initialize_store(is_first_time_indexing=True)
+retriever = vectorstore.get_retriever(top_k=10)
 
 chain = Chain(llm_model, retriever)
 

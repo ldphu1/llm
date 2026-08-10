@@ -4,6 +4,7 @@ from langchain_classic.retrievers import ParentDocumentRetriever
 from langchain_classic.storage import InMemoryStore, LocalFileStore
 from langchain_classic.storage._lc_store import create_kv_docstore
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from configs import config
 import os
 from typing import Optional
 
@@ -29,8 +30,15 @@ class VectorStoreManager:
             persist_directory=self.persist_directory,
         )
 
-        parent_splitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=50)
-        child_splitter = RecursiveCharacterTextSplitter(chunk_size=50, chunk_overlap=10)
+        parent_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=config.PARENT_CHUNK_SIZE,
+            chunk_overlap=config.PARENT_CHUNK_OVERLAP
+        )
+
+        child_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=config.CHILD_CHUNK_SIZE,
+            chunk_overlap=config.CHILD_CHUNK_OVERLAP
+        )
 
         self.parent_retriever = ParentDocumentRetriever(
             vectorstore=self.vectorstore,
@@ -40,8 +48,6 @@ class VectorStoreManager:
         )
 
         if is_first_time_indexing and self.raw_docs:
-            print(f"Đang indexing {len(self.raw_docs)} tài liệu theo từng batch...")
-
             for i in range(0, len(self.raw_docs), batch_size):
                 doc_batch = self.raw_docs[i: i + batch_size]
                 self.parent_retriever.add_documents(doc_batch)
@@ -60,15 +66,16 @@ from langchain_classic.retrievers import EnsembleRetriever
 
 
 def build_hybrid_retriever(raw_docs, parent_retriever: ParentDocumentRetriever, top_k: int = 10):
-    parent_splitter = RecursiveCharacterTextSplitter(chunk_size=200, chunk_overlap=50)
+    parent_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=config.PARENT_CHUNK_SIZE,
+        chunk_overlap=config.PARENT_CHUNK_OVERLAP
+    )
     parent_docs = parent_splitter.split_documents(raw_docs) if raw_docs else []
     bm25_retriever = BM25Retriever.from_documents(parent_docs)
     bm25_retriever.k = top_k
 
-    # 2. Cấu hình Dense Search (ParentDocumentRetriever)
     parent_retriever.search_kwargs = {"k": top_k}
 
-    # 3. Kết hợp 2 Retriever bằng EnsembleRetriever (RRF)
     ensemble_retriever = EnsembleRetriever(
         retrievers=[bm25_retriever, parent_retriever],
         weights=[0.4, 0.6],

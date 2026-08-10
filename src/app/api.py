@@ -4,7 +4,7 @@ from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
-from app.routes import rag_chain
+from src.core.routes import rag_chain
 
 app = FastAPI(title="LangChain RAG SSE API")
 
@@ -42,7 +42,3 @@ async def chat_stream_endpoint(request: ChatRequest):
         event_generator(request.question),
         media_type="text/event-stream"
     )
-
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run("api:app", host="0.0.0.0", port=8000, reload=True)

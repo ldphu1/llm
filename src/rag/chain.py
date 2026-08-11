@@ -102,17 +102,19 @@ def format_docs(docs: List[Document]):
 
     return "\n\n---\n\n".join(formatted_chunks)
 
+
 def retrieve_unique_documents(queries: List[str], base_retriever) -> List[Document]:
-    """Chạy retrieve cho từng query và lọc bỏ các document trùng lặp."""
+    """Chạy retrieve cho từng query và lọc bỏ các document trùng lặp dựa trên doc_id."""
     unique_docs = []
-    seen_contents = set()
+    seen_ids = set()
 
     for query in queries:
-        docs = base_retriever.invoke(query)
+        docs = base_retriever(query) if callable(base_retriever) else base_retriever.invoke(query)
         for doc in docs:
-            content = doc.page_content.strip()
-            if content not in seen_contents:
-                seen_contents.add(content)
+            doc_id = doc.metadata.get("doc_id") or hash(doc.page_content.strip())
+
+            if doc_id not in seen_ids:
+                seen_ids.add(doc_id)
                 unique_docs.append(doc)
 
     return unique_docs

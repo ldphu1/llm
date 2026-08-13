@@ -56,15 +56,15 @@ Quy tắc bắt buộc:
                 | LineListOutputParser()
         )
 
-        cross_encoder = HuggingFaceCrossEncoder(
-            model_name=rerunk_model
-        )
-        self.compressor = CrossEncoderReranker(model=cross_encoder, top_n=5)
-
-        # self.compressor = ONNXCrossEncoderReranker(
-        #     model_path=rerunk_model,
-        #     top_n=5
+        # cross_encoder = HuggingFaceCrossEncoder(
+        #     model_name=rerunk_model
         # )
+        # self.compressor = CrossEncoderReranker(model=cross_encoder, top_n=5)
+
+        self.compressor = ONNXCrossEncoderReranker(
+            model_path=rerunk_model,
+            top_n=5
+        )
 
         self.prompt = ChatPromptTemplate.from_template(self.TEMPLATE)
 

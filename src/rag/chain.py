@@ -8,6 +8,7 @@ from langchain_core.retrievers import BaseRetriever
 from langchain_classic.retrievers import ContextualCompressionRetriever
 from langchain_classic.retrievers.document_compressors import CrossEncoderReranker
 from langchain_community.cross_encoders import HuggingFaceCrossEncoder
+from src.core.rerank import ONNXCrossEncoderReranker
 
 
 
@@ -44,7 +45,7 @@ Quy tắc bắt buộc:
 {question}
 """
 
-    def __init__(self, llm_model: BaseChatModel, retriever: BaseRetriever, rerunk_model="BAAI/bge-reranker-base"):
+    def __init__(self, llm_model: BaseChatModel, retriever: BaseRetriever, rerunk_model="./models/bge_reranker_onnx"):
         self.llm_model = llm_model
         self.retriever = retriever
 
@@ -59,9 +60,10 @@ Quy tắc bắt buộc:
             model_name=rerunk_model
         )
         self.compressor = CrossEncoderReranker(model=cross_encoder, top_n=5)
-        # self.compression_retriever = ContextualCompressionRetriever(
-        #     base_compressor=self.compressor,
-        #     base_retriever=self.retriever
+
+        # self.compressor = ONNXCrossEncoderReranker(
+        #     model_path=rerunk_model,
+        #     top_n=5
         # )
 
         self.prompt = ChatPromptTemplate.from_template(self.TEMPLATE)

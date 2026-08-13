@@ -76,7 +76,6 @@ class VectorStoreManager:
         dense_retriever = self.vectorstore.as_retriever(search_kwargs={"k": top_k_child})
 
         # BM25 Retriever trên Child Chunks
-        # Lưu ý: Nếu restart server, bạn cần load lại child_docs hoặc cache danh sách này
         bm25_retriever = BM25Retriever.from_documents(self.all_child_docs)
         bm25_retriever.k = top_k_child
 

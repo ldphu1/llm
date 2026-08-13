@@ -27,5 +27,6 @@ TOP_K = 10
 
 #CHAIN
 RERANK_MODEL = "BAAI/bge-reranker-base"
+RERANK_MODEL_ONNX = "./models/bge_reranker_onnx"
 
 

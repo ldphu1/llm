@@ -11,7 +11,7 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from configs import config
 import hashlib
 
-class HybridParentRetrieverManager:
+class VectorStoreManager:
     def __init__(self, raw_docs: Optional[List[Document]] = None, embedding_model=None,
                  persist_directory="./data/chroma_db"):
         self.raw_docs = raw_docs or []
@@ -69,14 +69,13 @@ class HybridParentRetrieverManager:
                 doc_batch = child_docs[i: i + batch_size]
                 self.vectorstore.add_documents(doc_batch)
 
-    def get_custom_hybrid_retriever(self, top_k_child=10, top_k_parent=3):
+    def get_retriever(self, top_k_child=10, top_k_parent=3):
         if not self.vectorstore:
             self.initialize_store()
 
         dense_retriever = self.vectorstore.as_retriever(search_kwargs={"k": top_k_child})
 
         # BM25 Retriever trên Child Chunks
-        # Lưu ý: Nếu restart server, bạn cần load lại child_docs hoặc cache danh sách này
         bm25_retriever = BM25Retriever.from_documents(self.all_child_docs)
         bm25_retriever.k = top_k_child
 

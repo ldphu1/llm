@@ -114,6 +114,33 @@ class VectorStoreManager:
 
         self._load_child_docs()
 
+    def _rank_parents(self, matched_child_docs: List[Document], top_k_parent: int) -> List[str]:
+        parent_scores = {}
+
+        for rank, doc in enumerate(matched_child_docs, start=1):
+            parent_id = doc.metadata.get("parent_id")
+
+            if not parent_id:
+                continue
+
+            # Reciprocal Rank Score
+            score = 1.0 / rank
+
+            parent_scores[parent_id] = (
+                    parent_scores.get(parent_id, 0.0) + score
+            )
+
+        ranked_parents = sorted(
+            parent_scores.items(),
+            key=lambda x: x[1],
+            reverse=True
+        )
+
+        return [
+            parent_id
+            for parent_id, _ in ranked_parents[:top_k_parent]
+        ]
+
     def get_retriever(self, top_k_child=10, top_k_parent=3):
         if not self.vectorstore:
             self.initialize_store()
@@ -136,16 +163,10 @@ class VectorStoreManager:
         def retrieve_parents(query: str) -> List[Document]:
             matched_child_docs = ensemble_child_retriever.invoke(query)
 
-            parent_ids = []
-
-            for doc in matched_child_docs:
-                parent_id = doc.metadata.get("parent_id")
-
-                if parent_id and parent_id not in parent_ids:
-                    parent_ids.append(parent_id)
-
-                if len(parent_ids) >= top_k_parent:
-                    break
+            parent_ids = self._rank_parents(
+                matched_child_docs,
+                top_k_parent
+            )
 
             parent_docs = self.docstore.mget(parent_ids)
 
